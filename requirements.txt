@@ -1,0 +1,4 @@
+selenium
+pandas
+pyarrow
+azure-storage-file-datalake
