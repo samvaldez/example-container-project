@@ -1,3 +1,4 @@
+print("Iniciando scraper...")
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -29,6 +30,7 @@ urls = {
 
 # Conexión al Data Lake
 conn_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+print("Obtuve la cadena de conexión.")
 file_system_name = "raw"
 directory_name = "commodities"
 
@@ -37,21 +39,24 @@ file_system = service_client.get_file_system_client(file_system_name)
 directory = file_system.get_directory_client(directory_name)
 try:
     directory.create_directory()
+    print("Directorio creado.")
 except:
-    pass
+    print("Directorio ya existía.")
 
 # Recorrer cada URL
 for name, url in urls.items():
     try:
-        print(f"🔍 Procesando: {url}")
+        print(f"Procesando: {url}")
         driver.get(url)
 
         WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "table.market-table"))
         )
+        print("Tabla localizada.")
 
         html = driver.find_element(By.CSS_SELECTOR, "table.market-table").get_attribute("outerHTML")
         df = pd.read_html(html)[0]
+        print(f"Tabla cargada con {len(df)} filas.")
 
         if df.empty:
             print(f"La tabla en {name} está vacía.")
@@ -68,9 +73,10 @@ for name, url in urls.items():
         file_client.append_data(data=buffer.read(), offset=0, length=buffer.tell())
         file_client.flush_data(buffer.tell())
 
-        print(f"✅ {file_name} guardado exitosamente.")
+        print(f"{file_name} guardado exitosamente.")
         
     except Exception as e:
-        print(f" Error procesando {name}: {e}")
+        print(f"Error procesando {name}: {e}")
 
 driver.quit()
+print("Scraper finalizado.")
